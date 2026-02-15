@@ -10,12 +10,36 @@ import { toast } from "sonner";
 import { Copy, Download } from "lucide-react";
 import { format } from "date-fns";
 
+const DUMMY_CUSTOMERS = [
+  { email: "rahul.sharma@email.com", name: "Rahul Sharma", count: 5, lastDate: "2026-02-14T10:00:00Z" },
+  { email: "priya.iyer@email.com", name: "Priya Iyer", count: 3, lastDate: "2026-02-13T09:00:00Z" },
+  { email: "arun.kumar@email.com", name: "Arun Kumar", count: 8, lastDate: "2026-02-12T08:30:00Z" },
+  { email: "lakshmi.devi@email.com", name: "Lakshmi Devi", count: 2, lastDate: "2026-02-11T14:00:00Z" },
+  { email: "suresh.reddy@email.com", name: "Suresh Reddy", count: 6, lastDate: "2026-02-10T11:00:00Z" },
+  { email: "meena.nair@email.com", name: "Meena Nair", count: 1, lastDate: "2026-02-09T16:00:00Z" },
+  { email: "ganesh.patel@email.com", name: "Ganesh Patel", count: 4, lastDate: "2026-02-08T07:30:00Z" },
+  { email: "anitha.rao@email.com", name: "Anitha Rao", count: 7, lastDate: "2026-02-07T13:00:00Z" },
+  { email: "vijay.krishnan@email.com", name: "Vijay Krishnan", count: 2, lastDate: "2026-02-06T10:30:00Z" },
+  { email: "deepa.menon@email.com", name: "Deepa Menon", count: 9, lastDate: "2026-02-05T15:00:00Z" },
+  { email: "karthik.subram@email.com", name: "Karthik Subramanian", count: 3, lastDate: "2026-02-04T08:00:00Z" },
+  { email: "revathi.bala@email.com", name: "Revathi Balasubramanian", count: 1, lastDate: "2026-02-03T12:00:00Z" },
+  { email: "mohan.das@email.com", name: "Mohan Das", count: 5, lastDate: "2026-02-02T09:30:00Z" },
+  { email: "sridevi.ram@email.com", name: "Sridevi Raman", count: 4, lastDate: "2026-02-01T14:30:00Z" },
+  { email: "prasad.venkat@email.com", name: "Prasad Venkatesh", count: 2, lastDate: "2026-01-31T11:00:00Z" },
+  { email: "kavitha.sundar@email.com", name: "Kavitha Sundaram", count: 6, lastDate: "2026-01-30T16:30:00Z" },
+  { email: "ramesh.babu@email.com", name: "Ramesh Babu", count: 3, lastDate: "2026-01-29T07:00:00Z" },
+  { email: "uma.mahesh@email.com", name: "Uma Maheshwari", count: 10, lastDate: "2026-01-28T13:30:00Z" },
+  { email: "balaji.srinivas@email.com", name: "Balaji Srinivasan", count: 1, lastDate: "2026-01-27T10:00:00Z" },
+  { email: "padma.narayanan@email.com", name: "Padma Narayanan", count: 7, lastDate: "2026-01-26T15:00:00Z" },
+];
+
 const CustomerEmails = () => {
   const [search, setSearch] = useState("");
   const [minOrders, setMinOrders] = useState("all");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
 
+  // Merge real DB customers with dummy data
   const { data: orders = [] } = useQuery({
     queryKey: ["all-orders-emails"],
     queryFn: async () => {
@@ -27,6 +51,8 @@ const CustomerEmails = () => {
 
   const customers = useMemo(() => {
     const map = new Map<string, { email: string; name: string; count: number; lastDate: string }>();
+
+    // Add real customers from DB
     orders.forEach((o) => {
       const existing = map.get(o.email);
       if (existing) {
@@ -39,6 +65,14 @@ const CustomerEmails = () => {
         map.set(o.email, { email: o.email, name: o.customer_name, count: 1, lastDate: o.created_at });
       }
     });
+
+    // Add dummy customers (only if email not already present from real data)
+    DUMMY_CUSTOMERS.forEach((d) => {
+      if (!map.has(d.email)) {
+        map.set(d.email, { ...d });
+      }
+    });
+
     return Array.from(map.values());
   }, [orders]);
 
