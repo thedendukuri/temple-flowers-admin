@@ -3,11 +3,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Package, Clock, CheckCircle, CalendarDays } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
-import { format, subDays, startOfDay } from "date-fns";
+import { format, subDays } from "date-fns";
+import { useNavigate } from "react-router-dom";
 
 const PIE_COLORS = ["hsl(28, 90%, 52%)", "hsl(25, 40%, 20%)", "hsl(140, 45%, 42%)"];
 
 const Dashboard = () => {
+  const navigate = useNavigate();
+
   const { data: orders = [] } = useQuery({
     queryKey: ["all-orders-dashboard"],
     queryFn: async () => {
@@ -26,7 +29,6 @@ const Dashboard = () => {
   const todayStr = format(new Date(), "yyyy-MM-dd");
   const todayPickups = orders.filter((o) => o.pickup_date === todayStr).length;
 
-  // Line chart: orders per day over last 14 days
   const lineData = Array.from({ length: 14 }, (_, i) => {
     const date = subDays(new Date(), 13 - i);
     const dateStr = format(date, "yyyy-MM-dd");
@@ -36,27 +38,39 @@ const Dashboard = () => {
     return { date: format(date, "MMM d"), orders: count };
   });
 
-  // Pie chart: time slot distribution
   const slotCounts = ["Morning", "Evening", "Night"].map((slot) => ({
     name: slot,
     value: orders.filter((o) => o.time_slot === slot).length,
   }));
 
   const summaryCards = [
-    { title: "Total Orders", value: total, icon: Package, color: "text-primary" },
-    { title: "Pending", value: pending, icon: Clock, color: "text-saffron-dark" },
-    { title: "Completed", value: completed, icon: CheckCircle, color: "text-success" },
-    { title: "Today's Pickups", value: todayPickups, icon: CalendarDays, color: "text-brown" },
+    { title: "Total Orders", value: total, icon: Package, color: "text-primary", filter: "all" },
+    { title: "Pending", value: pending, icon: Clock, color: "text-saffron-dark", filter: "Pending" },
+    { title: "Completed", value: completed, icon: CheckCircle, color: "text-success", filter: "Completed" },
+    { title: "Today's Pickups", value: todayPickups, icon: CalendarDays, color: "text-brown", filter: `date:${todayStr}` },
   ];
+
+  const handleCardClick = (filter: string) => {
+    const params = new URLSearchParams();
+    if (filter.startsWith("date:")) {
+      params.set("pickupDate", filter.replace("date:", ""));
+    } else if (filter !== "all") {
+      params.set("status", filter);
+    }
+    navigate(`/admin/orders?${params.toString()}`);
+  };
 
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-brown">Dashboard</h1>
 
-      {/* Summary cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {summaryCards.map((card) => (
-          <Card key={card.title} className="bg-card shadow-sm">
+          <Card
+            key={card.title}
+            className="bg-card shadow-sm cursor-pointer transition-all hover:shadow-md hover:-translate-y-0.5"
+            onClick={() => handleCardClick(card.filter)}
+          >
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 {card.title}
@@ -70,7 +84,6 @@ const Dashboard = () => {
         ))}
       </div>
 
-      {/* Charts */}
       <div className="grid gap-6 lg:grid-cols-2">
         <Card className="bg-card shadow-sm">
           <CardHeader>
